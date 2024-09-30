@@ -24,14 +24,17 @@ func main() {
 	registerRoutes()
 
 	// Start server at port 8080
-	http.ListenAndServe(":8080", nil)
 	log.Println("Server listen at port 8080")
+	http.ListenAndServe("localhost:8080", nil)
 }
 
 func registerRoutes() {
 
 	// Categories
 	http.HandleFunc("/categories", getCategories)
+
+	// Items
+	http.HandleFunc("/items", getItems)
 }
 
 func dbConnection() (*sql.DB, error) {
@@ -43,7 +46,7 @@ func dbConnection() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	// defer db.Close()
 	
 	err = db.Ping()
 	if err != nil {
