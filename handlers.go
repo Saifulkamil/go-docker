@@ -48,6 +48,17 @@ func createCategory(w http.ResponseWriter, r *http.Request) {
 	var params Params
 	json.NewDecoder(r.Body).Decode(&params)
 
+	errs := make(map[string]string)
+
+	if (!validateRequired(params.Name)) {
+		errs["name"] = "name is required"
+	}
+
+	if len(errs) > 0 {
+		sendResponse(w, "Invalid field", errs, http.StatusBadRequest)
+		return
+	}
+
 	sql := "INSERT INTO categories (name) VALUES (?)"
 	_, err := db.Exec(sql, params.Name)
 	if err != nil {
@@ -69,6 +80,10 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 			case "GET" :
 				if parts[2] != "" {
+					if (!validateNumeric(parts[2])) {
+						sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+						return
+					}
 					id, _ := strconv.Atoi(parts[2])
 					getItemByID(w, id)
 					return
@@ -80,12 +95,20 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			case "PUT" :
 				if parts[2] != "" {
+					if (!validateNumeric(parts[2])) {
+						sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+						return
+					}
 					id, _ := strconv.Atoi(parts[2])
 					updateItem(w, r, id)
 					return
 				}
 			case "DELETE" :
 				if parts[2] != "" {
+					if (!validateNumeric(parts[2])) {
+						sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+						return
+					}
 					id, _ := strconv.Atoi(parts[2])
 					deleteItem(w, id)
 					return
@@ -116,15 +139,48 @@ func getItems(w http.ResponseWriter) {
 	sendResponse(w, "Items loaded successfully", items)
 }
 
-func createItem(w http.ResponseWriter, r *http.Request) {
-	type Params struct {
-		Name string `json:"name"`
-		Description string `json:"description"`
-		Price float64 `json:"price"`
-		CategoryID int `json:"category_id"`
+type ParamsItem struct {
+	Name string `json:"name"`
+	Description string `json:"description"`
+	Price float64 `json:"price"`
+	CategoryID int `json:"category_id"`
+}
+func itemValidator(params ParamsItem) (map[string]string){
+	errs := make(map[string]string)
+	
+	if (!validateRequired(params.Name)) {
+		errs["name"] = "name is required"
 	}
-	var params Params
+	if (!validateRequired(params.Description)) {
+		errs["description"] = "description is required"
+	}
+	if (!validateRequired(params.Price)) {
+		errs["price"] = "price is required"
+	}
+	if (!validateNumeric(params.Price)) {
+		errs["price"] = "price should be numeric"
+	}
+	if (!validateRequired(params.CategoryID)) {
+		errs["category_at"] = "category_at is required"
+	}
+	if (!validateExists("categories", params.CategoryID)) {
+		errs["category_at"] = "category_at does not exist"
+	}
+	if (!validateNumeric(params.CategoryID)) {
+		errs["category_at"] = "caategory_id should be numeric"
+	}
+	return errs
+}
+
+func createItem(w http.ResponseWriter, r *http.Request) {
+	var params ParamsItem
 	json.NewDecoder(r.Body).Decode(&params)
+
+	errs := itemValidator(params)
+	if len(errs) > 0 {
+		sendResponse(w, "Invalid field", errs, http.StatusBadRequest)
+		return
+	}
 
 	sql := "INSERT INTO items (name, category_id, description, price) VALUES (?, ?, ?, ?)"
 	_, err := db.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price)
@@ -154,14 +210,14 @@ func getItemByID(w http.ResponseWriter, id int) {
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request, id int) {
-	type Params struct {
-		Name string `json:"name"`
-		Description string `json:"description"`
-		Price float64 `json:"price"`
-		CategoryID int `json:"category_id"`
-	}
-	var params Params
+	var params ParamsItem
 	json.NewDecoder(r.Body).Decode(&params)
+
+	errs := itemValidator(params)
+	if len(errs) > 0 {
+		sendResponse(w, "Invalid field", errs, http.StatusBadRequest)
+		return
+	}
 
 	sql := "UPDATE items SET name=?, category_id=?, description=?, price=? WHERE id=?"
 	_, err := db.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price, id)
