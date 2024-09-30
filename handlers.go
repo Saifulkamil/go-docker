@@ -10,6 +10,18 @@ import (
 )
 
 // Category Handlers
+func categoryHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+		case "GET" :
+			getCategories(w)
+		case "POST" :
+			createCategory(w, r)
+		default :
+			sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
+			return
+	}
+}
+
 func getCategories(w http.ResponseWriter) {
 	rows, err := db.Query("SELECT * FROM categories")
 	if err != nil {
@@ -45,21 +57,46 @@ func createCategory(w http.ResponseWriter, r *http.Request) {
 	
 	sendResponse(w, "Category created successfully", nil)
 }
-
-func categoryHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-		case "GET" :
-			getCategories(w)
-		case "POST" :
-			createCategory(w, r)
-		default :
-			sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
-			return
-	}
-}
 // End Category Handlers
 
 // Item Handler
+func itemHandler(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	parts := strings.Split(path, "/")
+	log.Println()
+	if len(parts) > 1 && len(parts) <= 3 {
+
+		switch r.Method {
+			case "GET" :
+				if parts[2] != "" {
+					id, _ := strconv.Atoi(parts[2])
+					getItemByID(w, id)
+					return
+				}
+				getItems(w)
+				return
+			case "POST" :
+				createItem(w, r)
+				return
+			case "PUT" :
+				if parts[2] != "" {
+					id, _ := strconv.Atoi(parts[2])
+					updateItem(w, r, id)
+					return
+				}
+			case "DELETE" :
+				if parts[2] != "" {
+					id, _ := strconv.Atoi(parts[2])
+					deleteItem(w, id)
+					return
+				}
+		}
+		sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
+		return
+	}
+	sendResponse(w, "Route not found", nil, http.StatusNotFound)
+}
+
 func getItems(w http.ResponseWriter) {
 	rows, err := db.Query("SELECT * FROM items")
 	if err != nil {
@@ -99,29 +136,6 @@ func createItem(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, "Item created successfully", nil)
 }
 
-func itemHandler(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	parts := strings.Split(path, "/")
-
-	switch r.Method {
-		case "GET" :
-			log.Println()
-			if parts[2] != "" {
-				id, _ := strconv.Atoi(parts[2])
-				getItemByID(w, id)
-				return
-			}
-			getItems(w)
-			return
-		case "POST" :
-			createItem(w, r)
-			return
-	}
-	sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
-}
-// End Item Handler
-
-// Item ID Handler
 func getItemByID(w http.ResponseWriter, id int) {
 	var item Item
 	query := "SELECT id, category_id, name, description, price, created_at FROM items WHERE id=?"
@@ -129,16 +143,45 @@ func getItemByID(w http.ResponseWriter, id int) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			sendResponse(w, "Item not found!", nil, http.StatusNotFound)
+			sendResponse(w, "Item not found", nil, http.StatusNotFound)
 			return
 		}
 		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, "Item loaded successfully!", item)
+	sendResponse(w, "Item loaded successfully", item)
 }
 
-// func updateItem(w http.ResponseWriter, r *http.Request) {}
-// func deleteItem(w http.ResponseWriter, r *http.Request) {}
-// End Item ID Handler
+func updateItem(w http.ResponseWriter, r *http.Request, id int) {
+	type Params struct {
+		Name string `json:"name"`
+		Description string `json:"description"`
+		Price float64 `json:"price"`
+		CategoryID int `json:"category_id"`
+	}
+	var params Params
+	json.NewDecoder(r.Body).Decode(&params)
+
+	sql := "UPDATE items SET name=?, category_id=?, description=?, price=? WHERE id=?"
+	_, err := db.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price, id)
+	if err != nil {
+		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		return
+	}
+
+	sendResponse(w, "Item updated successfully", nil)
+}
+
+func deleteItem(w http.ResponseWriter, id int) {
+	sql := "DELETE FROM items WHERE id=?"
+	_, err := db.Exec(sql, id)
+	if err != nil {
+		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		return
+	}
+
+	sendResponse(w, "Item deleted successfully", nil)
+
+}
+// End Item Handler
