@@ -2,20 +2,28 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 var db *sql.DB
 
 func main() {
+    // Load .env file
+    err := godotenv.Load()
+    if err != nil {
+        log.Println("Error loading .env file")
+    }
 
 	// Connect to DB
-	var err error
 	db, err = dbConnection()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}else {
 		log.Println("Database connected succesfully!")
 	}
@@ -38,10 +46,13 @@ func registerRoutes() {
 }
 
 func dbConnection() (*sql.DB, error) {
-	db_user := "root"
-	db_pass := ""
-	db_name := "db_pari_test"
-	db, err := sql.Open("mysql", db_user + ":" + db_pass + "@tcp(127.0.0.1:3306)/" + db_name)
+	db_host := os.Getenv("DB_HOST")
+	db_port := os.Getenv("DB_PORT")
+	db_user := os.Getenv("DB_USER")
+	db_pass := os.Getenv("DB_PASS")
+	db_name := os.Getenv("DB_NAME")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", db_user, db_pass, db_host, db_port, db_name)
+	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {
 		return nil, err
