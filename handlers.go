@@ -5,9 +5,8 @@ import (
 	"net/http"
 )
 
-
 func getCategories(w http.ResponseWriter, r *http.Request) {
-	
+
 	type ResJSON struct {
 		Message string `json:"message"`
 	}
@@ -16,6 +15,7 @@ func getCategories(w http.ResponseWriter, r *http.Request) {
     message := ResJSON{Message: "Hello, from handler!"}
     json.NewEncoder(w).Encode(message)
 }
+
 // func createCategory(w http.ResponseWriter, r *http.Request) {}
 // func getItems(w http.ResponseWriter, r *http.Request) {}
 // func getItemByID(w http.ResponseWriter, r *http.Request) {}
