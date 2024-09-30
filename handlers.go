@@ -1,24 +1,24 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"database/sql"
 )
 
 // Category Handlers
 func categoryHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-		case "GET" :
-			getCategories(w)
-		case "POST" :
-			createCategory(w, r)
-		default :
-			sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
-			return
+	case "GET":
+		getCategories(w)
+	case "POST":
+		createCategory(w, r)
+	default:
+		sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -29,9 +29,9 @@ func getCategories(w http.ResponseWriter) {
 		return
 	}
 	defer rows.Close()
-	
+
 	var categories []Category
-	
+
 	for rows.Next() {
 		var cat Category
 		rows.Scan(&cat.ID, &cat.Name)
@@ -50,7 +50,7 @@ func createCategory(w http.ResponseWriter, r *http.Request) {
 
 	errs := make(map[string]string)
 
-	if (!validateRequired(params.Name)) {
+	if !validateRequired(params.Name) {
 		errs["name"] = "name is required"
 	}
 
@@ -65,9 +65,10 @@ func createCategory(w http.ResponseWriter, r *http.Request) {
 		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
-	
+
 	sendResponse(w, "Category created successfully", nil)
 }
+
 // End Category Handlers
 
 // Item Handler
@@ -78,41 +79,41 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 	if len(parts) > 1 && len(parts) <= 3 {
 
 		switch r.Method {
-			case "GET" :
-				if parts[2] != "" {
-					if (!validateNumeric(parts[2])) {
-						sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
-						return
-					}
-					id, _ := strconv.Atoi(parts[2])
-					getItemByID(w, id)
+		case "GET":
+			if parts[2] != "" {
+				if !validateNumeric(parts[2]) {
+					sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
 				}
-				getItems(w)
+				id, _ := strconv.Atoi(parts[2])
+				getItemByID(w, id)
 				return
-			case "POST" :
-				createItem(w, r)
+			}
+			getItems(w, r)
+			return
+		case "POST":
+			createItem(w, r)
+			return
+		case "PUT":
+			if parts[2] != "" {
+				if !validateNumeric(parts[2]) {
+					sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+					return
+				}
+				id, _ := strconv.Atoi(parts[2])
+				updateItem(w, r, id)
 				return
-			case "PUT" :
-				if parts[2] != "" {
-					if (!validateNumeric(parts[2])) {
-						sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
-						return
-					}
-					id, _ := strconv.Atoi(parts[2])
-					updateItem(w, r, id)
+			}
+		case "DELETE":
+			if parts[2] != "" {
+				if !validateNumeric(parts[2]) {
+					sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
 				}
-			case "DELETE" :
-				if parts[2] != "" {
-					if (!validateNumeric(parts[2])) {
-						sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
-						return
-					}
-					id, _ := strconv.Atoi(parts[2])
-					deleteItem(w, id)
-					return
-				}
+				id, _ := strconv.Atoi(parts[2])
+				deleteItem(w, id)
+				return
+			}
 		}
 		sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
 		return
@@ -120,16 +121,36 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, "Route not found", nil, http.StatusNotFound)
 }
 
-func getItems(w http.ResponseWriter) {
-	rows, err := db.Query("SELECT * FROM items")
+func getItems(w http.ResponseWriter, r *http.Request) {
+	query := "SELECT items.id, items.category_id, items.name, items.description, items.price, items.created_at FROM items LEFT JOIN categories ON categories.id=items.category_id"
+	search := r.URL.Query().Get("search")
+	sortBy := r.URL.Query().Get("sort")
+	sortOrder := r.URL.Query().Get("order")
+
+	if search != "" {
+		query += " WHERE items.name LIKE '%" + search + "%' OR categories.name LIKE '%" + search + "%'"
+	}
+
+	if strings.ToLower(sortBy) == "name" || strings.ToLower(sortBy) == "price" {
+		if strings.ToLower(sortOrder) == "desc" {
+			sortOrder = "DESC"
+		}else {
+			sortOrder = "ASC"
+		}
+		query += " ORDER BY items." + sortBy + " " + sortOrder
+	}
+
+	log.Print()
+
+	rows, err := db.Query(query)
 	if err != nil {
 		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	
+
 	var items []Item
-	
+
 	for rows.Next() {
 		var item Item
 		rows.Scan(&item.ID, &item.CategoryID, &item.Name, &item.Description, &item.Price, &item.CreatedAt)
@@ -140,33 +161,34 @@ func getItems(w http.ResponseWriter) {
 }
 
 type ParamsItem struct {
-	Name string `json:"name"`
-	Description string `json:"description"`
-	Price float64 `json:"price"`
-	CategoryID int `json:"category_id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Price       float64 `json:"price"`
+	CategoryID  int     `json:"category_id"`
 }
-func itemValidator(params ParamsItem) (map[string]string){
+
+func itemValidator(params ParamsItem) map[string]string {
 	errs := make(map[string]string)
-	
-	if (!validateRequired(params.Name)) {
+
+	if !validateRequired(params.Name) {
 		errs["name"] = "name is required"
 	}
-	if (!validateRequired(params.Description)) {
+	if !validateRequired(params.Description) {
 		errs["description"] = "description is required"
 	}
-	if (!validateRequired(params.Price)) {
+	if !validateRequired(params.Price) {
 		errs["price"] = "price is required"
 	}
-	if (!validateNumeric(params.Price)) {
+	if !validateNumeric(params.Price) {
 		errs["price"] = "price should be numeric"
 	}
-	if (!validateRequired(params.CategoryID)) {
+	if !validateRequired(params.CategoryID) {
 		errs["category_at"] = "category_at is required"
 	}
-	if (!validateExists("categories", params.CategoryID)) {
+	if !validateExists("categories", params.CategoryID) {
 		errs["category_at"] = "category_at does not exist"
 	}
-	if (!validateNumeric(params.CategoryID)) {
+	if !validateNumeric(params.CategoryID) {
 		errs["category_at"] = "caategory_id should be numeric"
 	}
 	return errs
@@ -238,6 +260,6 @@ func deleteItem(w http.ResponseWriter, id int) {
 	}
 
 	sendResponse(w, "Item deleted successfully", nil)
-
 }
+
 // End Item Handler
