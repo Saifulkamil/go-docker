@@ -31,10 +31,10 @@ func main() {
 func registerRoutes() {
 
 	// Categories
-	http.HandleFunc("/categories", getCategories)
+	http.HandleFunc("/categories", categoryHandler)
 
 	// Items
-	http.HandleFunc("/items", getItems)
+	http.HandleFunc("/items/", itemHandler)
 }
 
 func dbConnection() (*sql.DB, error) {
