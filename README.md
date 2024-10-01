@@ -1,7 +1,7 @@
 # OVERVIEW
 Lorem ipsum dolor sit amet consectetur, adipisicing elit. Minus unde assumenda enim natus accusamus tempore, sed asperiores repellat beatae quis, tempora numquam. Odit non minus rem dicta repellat at vitae aut aspernatur similique! Impedit eos temporibus nam nihil tempora officiis, expedita necessitatibus consequuntur quaerat tenetur? Quisquam officiis nihil quasi dolore.
 
-GO Version: go 1.23.1
+Golang Version: v1.23.1
 
 Require Modules:
 - github.com/go-sql-driver/mysql v1.8.1
