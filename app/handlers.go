@@ -1,29 +1,29 @@
-package main
+package app
 
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
+	"pari_test/utils"
 	"strconv"
 	"strings"
 )
 
 // Category Handlers
-func categoryHandler(w http.ResponseWriter, r *http.Request) {
+func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		getCategories(w)
 	case "POST":
 		createCategory(w, r)
 	default:
-		sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
+		utils.SendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
 		return
 	}
 }
 
 func getCategories(w http.ResponseWriter) {
-	rows, err := db.Query("SELECT * FROM categories")
+	rows, err := utils.DB.Query("SELECT * FROM categories")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -38,7 +38,7 @@ func getCategories(w http.ResponseWriter) {
 		categories = append(categories, cat)
 	}
 
-	sendResponse(w, "Categories loaded successfully", categories)
+	utils.SendResponse(w, "Categories loaded successfully", categories)
 }
 
 func createCategory(w http.ResponseWriter, r *http.Request) {
@@ -50,39 +50,38 @@ func createCategory(w http.ResponseWriter, r *http.Request) {
 
 	errs := make(map[string]string)
 
-	if !validateRequired(params.Name) {
+	if !utils.ValidateRequired(params.Name) {
 		errs["name"] = "name is required"
 	}
 
 	if len(errs) > 0 {
-		sendResponse(w, "Invalid field", errs, http.StatusBadRequest)
+		utils.SendResponse(w, "Invalid field", errs, http.StatusBadRequest)
 		return
 	}
 
 	sql := "INSERT INTO categories (name) VALUES (?)"
-	_, err := db.Exec(sql, params.Name)
+	_, err := utils.DB.Exec(sql, params.Name)
 	if err != nil {
-		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, "Category created successfully", nil)
+	utils.SendResponse(w, "Category created successfully", nil)
 }
 
 // End Category Handlers
 
 // Item Handler
-func itemHandler(w http.ResponseWriter, r *http.Request) {
+func ItemHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	parts := strings.Split(path, "/")
-	log.Println()
 	if len(parts) > 1 && len(parts) <= 3 {
 
 		switch r.Method {
 		case "GET":
 			if parts[2] != "" {
-				if !validateNumeric(parts[2]) {
-					sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+				if !utils.ValidateNumeric(parts[2]) {
+					utils.SendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
 				}
 				id, _ := strconv.Atoi(parts[2])
@@ -96,8 +95,8 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		case "PUT":
 			if parts[2] != "" {
-				if !validateNumeric(parts[2]) {
-					sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+				if !utils.ValidateNumeric(parts[2]) {
+					utils.SendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
 				}
 				id, _ := strconv.Atoi(parts[2])
@@ -106,8 +105,8 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		case "DELETE":
 			if parts[2] != "" {
-				if !validateNumeric(parts[2]) {
-					sendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
+				if !utils.ValidateNumeric(parts[2]) {
+					utils.SendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
 				}
 				id, _ := strconv.Atoi(parts[2])
@@ -115,10 +114,10 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		sendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
+		utils.SendResponse(w, "Method not allowed", nil, http.StatusMethodNotAllowed)
 		return
 	}
-	sendResponse(w, "Route not found", nil, http.StatusNotFound)
+	utils.SendResponse(w, "Route not found", nil, http.StatusNotFound)
 }
 
 func getItems(w http.ResponseWriter, r *http.Request) {
@@ -140,11 +139,9 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 		query += " ORDER BY items." + sortBy + " " + sortOrder
 	}
 
-	log.Print()
-
-	rows, err := db.Query(query)
+	rows, err := utils.DB.Query(query)
 	if err != nil {
-		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -157,7 +154,7 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 		items = append(items, item)
 	}
 
-	sendResponse(w, "Items loaded successfully", items)
+	utils.SendResponse(w, "Items loaded successfully", items)
 }
 
 type ParamsItem struct {
@@ -170,25 +167,25 @@ type ParamsItem struct {
 func itemValidator(params ParamsItem) map[string]string {
 	errs := make(map[string]string)
 
-	if !validateRequired(params.Name) {
+	if !utils.ValidateRequired(params.Name) {
 		errs["name"] = "name is required"
 	}
-	if !validateRequired(params.Description) {
+	if !utils.ValidateRequired(params.Description) {
 		errs["description"] = "description is required"
 	}
-	if !validateRequired(params.Price) {
+	if !utils.ValidateRequired(params.Price) {
 		errs["price"] = "price is required"
 	}
-	if !validateNumeric(params.Price) {
+	if !utils.ValidateNumeric(params.Price) {
 		errs["price"] = "price should be numeric"
 	}
-	if !validateRequired(params.CategoryID) {
+	if !utils.ValidateRequired(params.CategoryID) {
 		errs["category_at"] = "category_at is required"
 	}
-	if !validateExists("categories", params.CategoryID) {
+	if !utils.ValidateExists("categories", params.CategoryID) {
 		errs["category_at"] = "category_at does not exist"
 	}
-	if !validateNumeric(params.CategoryID) {
+	if !utils.ValidateNumeric(params.CategoryID) {
 		errs["category_at"] = "caategory_id should be numeric"
 	}
 	return errs
@@ -200,35 +197,35 @@ func createItem(w http.ResponseWriter, r *http.Request) {
 
 	errs := itemValidator(params)
 	if len(errs) > 0 {
-		sendResponse(w, "Invalid field", errs, http.StatusBadRequest)
+		utils.SendResponse(w, "Invalid field", errs, http.StatusBadRequest)
 		return
 	}
 
 	sql := "INSERT INTO items (name, category_id, description, price) VALUES (?, ?, ?, ?)"
-	_, err := db.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price)
+	_, err := utils.DB.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price)
 	if err != nil {
-		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, "Item created successfully", nil)
+	utils.SendResponse(w, "Item created successfully", nil)
 }
 
 func getItemByID(w http.ResponseWriter, id int) {
 	var item Item
 	query := "SELECT id, category_id, name, description, price, created_at FROM items WHERE id=?"
-	err := db.QueryRow(query, id).Scan(&item.ID, &item.CategoryID, &item.Name, &item.Description, &item.Price, &item.CreatedAt)
+	err := utils.DB.QueryRow(query, id).Scan(&item.ID, &item.CategoryID, &item.Name, &item.Description, &item.Price, &item.CreatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			sendResponse(w, "Item not found", nil, http.StatusNotFound)
+			utils.SendResponse(w, "Item not found", nil, http.StatusNotFound)
 			return
 		}
-		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, "Item loaded successfully", item)
+	utils.SendResponse(w, "Item loaded successfully", item)
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request, id int) {
@@ -237,29 +234,29 @@ func updateItem(w http.ResponseWriter, r *http.Request, id int) {
 
 	errs := itemValidator(params)
 	if len(errs) > 0 {
-		sendResponse(w, "Invalid field", errs, http.StatusBadRequest)
+		utils.SendResponse(w, "Invalid field", errs, http.StatusBadRequest)
 		return
 	}
 
 	sql := "UPDATE items SET name=?, category_id=?, description=?, price=? WHERE id=?"
-	_, err := db.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price, id)
+	_, err := utils.DB.Exec(sql, params.Name, params.CategoryID, params.Description, params.Price, id)
 	if err != nil {
-		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, "Item updated successfully", nil)
+	utils.SendResponse(w, "Item updated successfully", nil)
 }
 
 func deleteItem(w http.ResponseWriter, id int) {
 	sql := "DELETE FROM items WHERE id=?"
-	_, err := db.Exec(sql, id)
+	_, err := utils.DB.Exec(sql, id)
 	if err != nil {
-		sendResponse(w, err.Error(), nil, http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, "Item deleted successfully", nil)
+	utils.SendResponse(w, "Item deleted successfully", nil)
 }
 
 // End Item Handler

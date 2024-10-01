@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ type ResponJSON struct {
 	Data    any    `json:"data"`
 }
 
-func sendResponse(w http.ResponseWriter, message string, data any, status ...int) {
+func SendResponse(w http.ResponseWriter, message string, data any, status ...int) {
 	responseStatus := http.StatusOK
 	if len(status) > 0 {
 		responseStatus = status[0]
@@ -28,7 +28,7 @@ func sendResponse(w http.ResponseWriter, message string, data any, status ...int
 	json.NewEncoder(w).Encode(res)
 }
 
-func validateRequired(value any) bool {
+func ValidateRequired(value any) bool {
 	switch v := value.(type) {
 	case string:
 		if strings.TrimSpace(v) == "" {
@@ -42,16 +42,16 @@ func validateRequired(value any) bool {
 	return true
 }
 
-func validateExists(table string, id int) bool {
+func ValidateExists(table string, id int) bool {
 	query := fmt.Sprintf("SELECT id FROM %s WHERE id = ?", table)
-
+	
 	var retrievedID int
-	err := db.QueryRow(query, id).Scan(&retrievedID)
+	err := DB.QueryRow(query, id).Scan(&retrievedID)
 
 	return err == nil
 }
 
-func validateNumeric(value any) bool {
+func ValidateNumeric(value any) bool {
 	switch v := value.(type) {
 	case int, int8, int16, int32, int64:
 		return true
