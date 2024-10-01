@@ -233,6 +233,11 @@ func updateItem(w http.ResponseWriter, r *http.Request, id int) {
 	var params ParamsItem
 	json.NewDecoder(r.Body).Decode(&params)
 
+	if !utils.ValidateExists("items", id) {
+		utils.SendResponse(w, "Invalid field", nil, http.StatusNotFound)
+		return
+	}
+	
 	errs := itemValidator(params)
 	if len(errs) > 0 {
 		utils.SendResponse(w, "Invalid field", errs, http.StatusBadRequest)
@@ -250,6 +255,12 @@ func updateItem(w http.ResponseWriter, r *http.Request, id int) {
 }
 
 func deleteItem(w http.ResponseWriter, id int) {
+
+	if !utils.ValidateExists("items", id) {
+		utils.SendResponse(w, "Invalid field", nil, http.StatusNotFound)
+		return
+	}
+
 	sql := "DELETE FROM items WHERE id=?"
 	_, err := utils.DB.Exec(sql, id)
 	if err != nil {
