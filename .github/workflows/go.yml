@@ -13,22 +13,42 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Set up QEMU
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
+      
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Login to Docker Hub
+      
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASS }}
-      -
-        name: Build and push
+      
+      - name: Copy .env.example to .env
+        run: |
+          cp .env.example .env
+          echo "DB_HOST=${{ secrets.ENV__HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.ENV__PORT }}" >> .env
+          echo "DB_USER=${{ secrets.ENV__USER }}" >> .env
+          echo "DB_PASS=${{ secrets.ENV__PASS }}" >> .env
+          echo "DB_NAME=${{ secrets.ENV__NAME }}" >> .env
+          echo "DB_NAME_TEST=${{ secrets.ENV__NAME_TEST }}" >> .env
+      
+      - name: Run tests
+        run: |
+          go mod tidy        # Pastikan dependensi terinstal
+          go test ./tests    # Jalankan pengujian
+
+      - name: Run main.go
+        run: |
+          go run main.go     # Jalankan aplikasi untuk memastikan koneksi ke DB berfungsi
+
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           push: true
           tags: sepol123/test:latest
-
