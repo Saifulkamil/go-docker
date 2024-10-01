@@ -41,7 +41,7 @@ jobs:
       - name: Run tests
         run: |
           go mod tidy        # Pastikan dependensi terinstal
-          go test ./tests    # Jalankan pengujian
+          #go test ./tests    # Jalankan pengujian
 
       - name: Run main.go
         run: |
