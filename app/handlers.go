@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"encoding/json"
+	// "log"
 	"net/http"
 	"pari_test/utils"
 	"strconv"
@@ -25,7 +26,7 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 func getCategories(w http.ResponseWriter) {
 	rows, err := utils.DB.Query("SELECT * FROM categories")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.SendResponse(w, err.Error(), nil, http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -75,11 +76,10 @@ func createCategory(w http.ResponseWriter, r *http.Request) {
 func ItemHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	parts := strings.Split(path, "/")
-	if len(parts) > 1 && len(parts) <= 3 {
-
+	if len(parts) <= 3 {
 		switch r.Method {
 		case "GET":
-			if parts[2] != "" {
+			if len(parts) > 2 && parts[2] != "" {
 				if !utils.ValidateNumeric(parts[2]) {
 					utils.SendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
@@ -94,7 +94,7 @@ func ItemHandler(w http.ResponseWriter, r *http.Request) {
 			createItem(w, r)
 			return
 		case "PUT":
-			if parts[2] != "" {
+			if len(parts) > 2 && parts[2] != "" {
 				if !utils.ValidateNumeric(parts[2]) {
 					utils.SendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
@@ -104,7 +104,7 @@ func ItemHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case "DELETE":
-			if parts[2] != "" {
+			if len(parts) > 2 && parts[2] != "" {
 				if !utils.ValidateNumeric(parts[2]) {
 					utils.SendResponse(w, "ID should be numeric", nil, http.StatusBadRequest)
 					return
@@ -121,11 +121,12 @@ func ItemHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getItems(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT items.id, items.category_id, items.name, items.description, items.price, items.created_at FROM items LEFT JOIN categories ON categories.id=items.category_id"
 	search := r.URL.Query().Get("search")
 	sortBy := r.URL.Query().Get("sort")
 	sortOrder := r.URL.Query().Get("order")
-
+	
+	query := "SELECT items.id, items.category_id, items.name, items.description, items.price, items.created_at FROM items LEFT JOIN categories ON categories.id=items.category_id"
+	
 	if search != "" {
 		query += " WHERE items.name LIKE '%" + search + "%' OR categories.name LIKE '%" + search + "%'"
 	}

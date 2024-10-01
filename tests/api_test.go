@@ -2,21 +2,36 @@ package tests
 
 import (
 	"bytes"
-	// "log"
+	"log"
 	"net/http"
 	"net/http/httptest"
 
 	// "strings"
 	"pari_test/app"
-	// "pari_test/utils"
+	"pari_test/utils"
 	"testing"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 // Helper functions
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	err = utils.DBConnection()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.Method + " " + r.URL.Path + " DONE")
 		switch r.URL.Path {
 		case "/categories":
 			app.CategoryHandler(w, r)

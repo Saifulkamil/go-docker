@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
-	"database/sql"
 )
 
 var DB *sql.DB
@@ -22,7 +22,6 @@ func DBConnection() (error) {
 	if err != nil {
 		return err
 	}
-	defer DB.Close()
 	
 	err = DB.Ping()
 	return err
