@@ -5,11 +5,10 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
-
-	// "strings"
+	"os"
 	"pari_test/app"
 	"pari_test/utils"
+	"strings"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -25,7 +24,8 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 		return nil
 	}
 
-	err = utils.DBConnection()
+	db_name := os.Getenv("DB_NAME_TEST")
+	err = utils.DBConnection(db_name)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -53,7 +53,7 @@ func TestGetCategories(t *testing.T) {
 }
 
 func TestCreateCategory(t *testing.T) {
-	payload := []byte(`{"name": "New Category"}`)
+	payload := []byte(`{"name": "New Category2"}`)
 	req, _ := http.NewRequest("POST", "/categories", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
@@ -114,6 +114,14 @@ func TestDeleteItem(t *testing.T) {
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
+
+func TestResetDatabase(t *testing.T) {
+	utils.DB.Exec("SET FOREIGN_KEY_CHECKS = 0")
+	utils.DB.Exec("TRUNCATE TABLE items")
+	utils.DB.Exec("TRUNCATE TABLE categories")
+	utils.DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
+	log.Println("Database reseted")
 }
 
 // Helper function to check response code

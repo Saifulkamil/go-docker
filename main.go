@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"pari_test/app"
 	"pari_test/utils"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
@@ -18,7 +18,8 @@ func main() {
     }
 
 	// Connect to DB
-	err = utils.DBConnection()
+	db_name := os.Getenv("DB_NAME")
+	err = utils.DBConnection(db_name)
 	if err != nil {
 		log.Println(err)
 	}else {
