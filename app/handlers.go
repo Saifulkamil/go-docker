@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"encoding/json"
+
 	// "log"
 	"net/http"
 	"pari_test/utils"
@@ -124,9 +125,9 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	sortBy := r.URL.Query().Get("sort")
 	sortOrder := r.URL.Query().Get("order")
-	
+
 	query := "SELECT items.id, items.category_id, items.name, items.description, items.price, items.created_at FROM items LEFT JOIN categories ON categories.id=items.category_id"
-	
+
 	if search != "" {
 		query += " WHERE items.name LIKE '%" + search + "%' OR categories.name LIKE '%" + search + "%'"
 	}
@@ -134,7 +135,7 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(sortBy) == "name" || strings.ToLower(sortBy) == "price" {
 		if strings.ToLower(sortOrder) == "desc" {
 			sortOrder = "DESC"
-		}else {
+		} else {
 			sortOrder = "ASC"
 		}
 		query += " ORDER BY items." + sortBy + " " + sortOrder
@@ -234,10 +235,10 @@ func updateItem(w http.ResponseWriter, r *http.Request, id int) {
 	json.NewDecoder(r.Body).Decode(&params)
 
 	if !utils.ValidateExists("items", id) {
-		utils.SendResponse(w, "Invalid field", nil, http.StatusNotFound)
+		utils.SendResponse(w, "Item not found", nil, http.StatusNotFound)
 		return
 	}
-	
+
 	errs := itemValidator(params)
 	if len(errs) > 0 {
 		utils.SendResponse(w, "Invalid field", errs, http.StatusBadRequest)
@@ -257,7 +258,7 @@ func updateItem(w http.ResponseWriter, r *http.Request, id int) {
 func deleteItem(w http.ResponseWriter, id int) {
 
 	if !utils.ValidateExists("items", id) {
-		utils.SendResponse(w, "Invalid field", nil, http.StatusNotFound)
+		utils.SendResponse(w, "Item not found", nil, http.StatusNotFound)
 		return
 	}
 
