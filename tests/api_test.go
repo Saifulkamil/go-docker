@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 
 	// "strings"
 	"pari_test/app"
@@ -31,11 +32,12 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	}
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.Method + " " + r.URL.Path + " DONE")
-		switch r.URL.Path {
-		case "/categories":
+		log.Println(r.Method + " " + r.URL.Path)
+		paths := strings.Split(r.URL.Path, "/")
+		switch paths[1] {
+		case "categories":
 			app.CategoryHandler(w, r)
-		case "/items":
+		case "items":
 			app.ItemHandler(w, r)
 		}
 	})
