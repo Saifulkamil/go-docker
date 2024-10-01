@@ -4,8 +4,6 @@
 name: Go
 
 on:
-  commit_comment:
-    branches: [ "main" ]
   push:
     branches: [ "main" ]
   pull_request:
