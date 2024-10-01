@@ -15,6 +15,7 @@ func main() {
     err := godotenv.Load()
     if err != nil {
         log.Println("Error loading .env file")
+		return
     }
 
 	// Connect to DB
@@ -22,9 +23,9 @@ func main() {
 	err = utils.DBConnection(db_name)
 	if err != nil {
 		log.Println(err)
-	}else {
-		log.Println("Database connected succesfully!")
+		return
 	}
+	log.Println("Database connected succesfully!")
 
 	// Register Routes
 	RegisterRoutes()
