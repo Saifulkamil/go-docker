@@ -1,5 +1,12 @@
 # OVERVIEW
 Lorem ipsum dolor sit amet consectetur, adipisicing elit. Minus unde assumenda enim natus accusamus tempore, sed asperiores repellat beatae quis, tempora numquam. Odit non minus rem dicta repellat at vitae aut aspernatur similique! Impedit eos temporibus nam nihil tempora officiis, expedita necessitatibus consequuntur quaerat tenetur? Quisquam officiis nihil quasi dolore.
+
+GO Version: go 1.23.1
+
+Require Modules:
+- github.com/go-sql-driver/mysql v1.8.1
+- github.com/joho/godotenv v1.5.1
+
 # SETUP
 Lorem ipsum dolor sit amet consectetur, adipisicing elit. Minus unde assumenda enim natus accusamus tempore, sed asperiores repellat beatae quis, tempora numquam. 
 1. Clone project from github
@@ -12,7 +19,7 @@ cd SPARI_PROJECT_TEST
 ```
 3. Install modules
 ```
-go mod tiny
+go mod tidy
 ```
 3. Duplicate file .env.example and change filename to .env
 ```
